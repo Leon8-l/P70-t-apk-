@@ -1,4 +1,4 @@
-name: fetch-osmand-map
+name: fetch-apk
 
 on:
   workflow_dispatch:
@@ -11,35 +11,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Download map
+      - name: Download APKs
         run: |
           mkdir -p out
-          CANDIDATES="China_guangdong_asia_2.obf.zip China_guangdong_asia.obf.zip asia_china_guangdong_2.obf.zip"
-          FOUND=""
-          for f in $CANDIDATES; do
-            echo "--- try: $f"
-            code=$(curl -sS -L -o "out/$f" -w "%{http_code}" --max-time 300 "https://download.osmand.net/download?standard=yes&file=$f" || echo 000)
-            size=$(stat -c%s "out/$f" 2>/dev/null || echo 0)
-            echo "    http=$code size=$size"
-            if [ "$code" = "200" ] && [ "$size" -gt 1000000 ]; then
-              FOUND="$f"
-              break
-            else
-              rm -f "out/$f"
-            fi
-          done
-          if [ -z "$FOUND" ]; then
-            echo "::error::没找到可用包"
-            exit 1
-          fi
-          echo "OK -> $FOUND"
+          # 车来了 v4.48.2 (Android 4.4.4+)
+          curl -sS -L -o out/chelaile-v4.48.2.apk "https://www.wandoujia.com/apps/5947437/history_v352" 2>&1 | head -5
+          # 掌上公交 v3.3.6 (2019, Android 4.4)
+          curl -sS -L -o out/zhangshangbus-v3.3.6.apk "https://www.wandoujia.com/apps/29355/history_v541" 2>&1 | head -5
           ls -lh out/
-
+          file out/*
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: guangdong-map-${{ github.run_number }}
-          name: "OsmAnd 广东地图包 ${{ github.run_number }}"
+          tag_name: bus-apks-${{ github.run_number }}
+          name: "公交APP安卓4.4适配版"
           files: out/*
           token: ${{ secrets.GITHUB_TOKEN }}
