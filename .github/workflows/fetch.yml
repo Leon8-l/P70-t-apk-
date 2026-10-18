@@ -1,0 +1,45 @@
+name: fetch-osmand-map
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download map
+        run: |
+          mkdir -p out
+          CANDIDATES="asia_china_guangxi_2.obf.zip asia_china_guangxi.obf.zip Guangxi_china_2.obf.zip china_2.obf.zip"
+          FOUND=""
+          for f in $CANDIDATES; do
+            echo "--- try: $f"
+            code=$(curl -sS -L -o "out/$f" -w "%{http_code}" --max-time 900 "https://download.osmand.net/download?file=$f" || echo 000)
+            size=$(stat -c%s "out/$f" 2>/dev/null || echo 0)
+            echo "    http=$code size=$size"
+            if [ "$code" = "200" ] && [ "$size" -gt 1000000 ]; then
+              FOUND="$f"
+              break
+            else
+              rm -f "out/$f"
+            fi
+          done
+          if [ -z "$FOUND" ]; then
+            echo "::error::没找到可用包"
+            exit 1
+          fi
+          echo "OK -> $FOUND"
+          ls -lh out/
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: map-${{ github.run_number }}
+          name: "OsmAnd 地图包 ${{ github.run_number }}"
+          files: out/*
+          token: ${{ secrets.GITHUB_TOKEN }}
