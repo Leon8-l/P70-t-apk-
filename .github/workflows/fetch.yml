@@ -15,11 +15,11 @@ jobs:
       - name: Download map
         run: |
           mkdir -p out
-          CANDIDATES="China_asia_2.obf.zip China_asia.obf.zip china_2.obf.zip"
+          CANDIDATES="China_guangdong_asia_2.obf.zip China_guangdong_asia.obf.zip asia_china_guangdong_2.obf.zip"
           FOUND=""
           for f in $CANDIDATES; do
             echo "--- try: $f"
-            code=$(curl -sS -L -o "out/$f" -w "%{http_code}" --max-time 600 "https://download.osmand.net/download?standard=yes&file=$f" || echo 000)
+            code=$(curl -sS -L -o "out/$f" -w "%{http_code}" --max-time 300 "https://download.osmand.net/download?standard=yes&file=$f" || echo 000)
             size=$(stat -c%s "out/$f" 2>/dev/null || echo 0)
             echo "    http=$code size=$size"
             if [ "$code" = "200" ] && [ "$size" -gt 1000000 ]; then
@@ -39,7 +39,7 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: china-map-${{ github.run_number }}
-          name: "OsmAnd 全国地图包 ${{ github.run_number }}"
+          tag_name: guangdong-map-${{ github.run_number }}
+          name: "OsmAnd 广东地图包 ${{ github.run_number }}"
           files: out/*
           token: ${{ secrets.GITHUB_TOKEN }}
