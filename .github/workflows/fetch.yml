@@ -14,14 +14,19 @@ jobs:
 
       - name: Download map
         run: |
+          set -x
           mkdir -p out
+          # 先测试站点连通性
+          curl -sS -I --max-time 30 "https://download.osmand.net/" 2>&1 | head -20
+          echo "=== 开始尝试下载 ==="
           CANDIDATES="asia_china_guangxi_2.obf.zip asia_china_guangxi.obf.zip Guangxi_china_2.obf.zip china_2.obf.zip"
           FOUND=""
           for f in $CANDIDATES; do
             echo "--- try: $f"
-            code=$(curl -sS -L -o "out/$f" -w "%{http_code}" --max-time 900 "https://download.osmand.net/download?file=$f" || echo 000)
+            code=$(curl -sS -L -o "out/$f" -w "%{http_code}" --max-time 120 "https://download.osmand.net/download?file=$f" 2>&1 || echo 000)
             size=$(stat -c%s "out/$f" 2>/dev/null || echo 0)
             echo "    http=$code size=$size"
+            head -c 200 "out/$f" 2>/dev/null | xxd | head -3
             if [ "$code" = "200" ] && [ "$size" -gt 1000000 ]; then
               FOUND="$f"
               break
